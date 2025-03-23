@@ -76,6 +76,12 @@ float sdBox(vec3 p,vec3 b)
     return length(max(d,0.))+min(max(d.x,max(d.y,d.z)),0.);
 }
 
+// 球体のSDF
+float sdSphere(vec3 p,float r)
+{
+    return length(p)-r;
+}
+
 // 丸みを持った立方体
 float sdRoundBox(vec3 p,vec3 b,float r)
 {
@@ -155,7 +161,40 @@ float map(vec3 p)
     // FBMによるディスプレースメント（周波数も小さく）
     float displacement=fbm(p*.8+iTime*.2)*.6;
     
-    return-(box+displacement);// 反転して内側から見るように
+    // 立方体のSDF（内側から見る）
+    float roomSdf=-(box+displacement);
+    
+    // PointLightの位置
+    vec3 lightPos=getPointLightPos(iTime);
+    
+    // ライトの球体
+    float lightSphere=sdSphere(p-lightPos,.3);
+    
+    // 部屋と光源の球体を組み合わせる（どちらか近い方を選択）
+    // ここではminを使わず別々に保持して、後で色分けに使う
+    return roomSdf;
+}
+
+// 物体の種類を特定する関数
+int getObjectType(vec3 p){
+    // 時間で回転（速度を0.2倍に減速）
+    float time=iTime*.1;
+    vec3 rotP=rotateY(time)*rotateX(time*.7)*p;
+    
+    // 有機的な丸い立方体SDF
+    float box=sdOrganicBox(rotP,vec3(10.),2.,.3,.15);
+    float displacement=fbm(rotP*.8+iTime*.2)*.6;
+    float roomSdf=-(box+displacement);
+    
+    // PointLightの球体
+    vec3 lightPos=getPointLightPos(iTime);
+    float lightSphere=sdSphere(p-lightPos,.3);
+    
+    // 最も近いオブジェクトを判定
+    if(lightSphere<roomSdf){
+        return 1;// ライトの球体
+    }
+    return 0;// 部屋
 }
 
 // 法線計算
@@ -194,9 +233,19 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
         float d=map(p);
         
         if(d<t_min){
+            // オブジェクトの種類を判定
+            int objType=getObjectType(p);
+            
             // オブジェクトにヒット
             vec3 normal=calcNormal(p);
             
+            if(objType==1){
+                // ライトの球体にヒット - 発光色を直接返す
+                fragColor=vec4(pointLightColor,1.);
+                return;
+            }
+            
+            // 以降は部屋（通常のシェーディング）
             // 通常のディレクショナルライト
             vec3 lightDir=normalize(vec3(1.,1.,-1.));
             float diff=max(dot(normal,lightDir),0.);
