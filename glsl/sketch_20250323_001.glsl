@@ -7,9 +7,34 @@ float sdBox(vec3 p,vec3 b)
     return length(max(d,0.))+min(max(d.x,max(d.y,d.z)),0.);
 }
 
+// 回転行列
+mat3 rotateY(float angle){
+    float s=sin(angle);
+    float c=cos(angle);
+    return mat3(
+        c,0,s,
+        0,1,0,
+        -s,0,c
+    );
+}
+
+mat3 rotateX(float angle){
+    float s=sin(angle);
+    float c=cos(angle);
+    return mat3(
+        1,0,0,
+        0,c,-s,
+        0,s,c
+    );
+}
+
 // シーンのSDF
 float map(vec3 p)
 {
+    // 時間で回転
+    float time=iTime*.5;
+    p=rotateY(time)*rotateX(time*.7)*p;
+    
     return sdBox(p,vec3(1.));// 1x1x1の立方体
 }
 
@@ -34,20 +59,6 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
     // カメラ設定
     vec3 ro=vec3(0.,0.,-3.);// レイの原点（カメラ位置）
     vec3 rd=normalize(vec3(uv,1.));// レイの方向
-    
-    // カメラを回転
-    float time=iTime*.5;
-    mat3 rotX=mat3(
-        1.,0.,0.,
-        0.,cos(time),-sin(time),
-        0.,sin(time),cos(time)
-    );
-    mat3 rotY=mat3(
-        cos(time),0.,sin(time),
-        0.,1.,0.,
-        -sin(time),0.,cos(time)
-    );
-    rd=rotX*rotY*rd;
     
     // レイマーチング
     float t=0.;
@@ -74,7 +85,6 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
         t+=d;
     }
     
-    // 背景色（空）
-    vec3 bg=vec3(.5,.7,1.)-.3*rd.y;
-    fragColor=vec4(bg,1.);
+    // 背景色（黒）
+    fragColor=vec4(0.,0.,0.,1.);
 }
