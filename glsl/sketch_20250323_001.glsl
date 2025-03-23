@@ -104,13 +104,13 @@ float map(vec3 p)
     float time=iTime*.5;
     p=rotateY(time)*rotateX(time*.7)*p;
     
-    // 基本の立方体SDF
-    float box=sdBox(p,vec3(1.));
+    // 基本の立方体SDF（サイズを10倍にして、内外を反転）
+    float box=sdBox(p,vec3(10.));
     
     // FBMによるディスプレースメント
     float displacement=fbm(p*3.+time*.2)*.6;
     
-    return box+displacement;// ディスプレースメントを適用
+    return-(box+displacement);// 反転して内側から見るように
 }
 
 // 法線計算
@@ -131,8 +131,8 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
     // Normalized pixel coordinates (from 0 to 1)
     vec2 uv=(fragCoord-.5*iResolution.xy)/iResolution.y;
     
-    // カメラ設定
-    vec3 ro=vec3(0.,0.,-3.);// レイの原点（カメラ位置）
+    // カメラ設定（立方体の中央に配置）
+    vec3 ro=vec3(0.,0.,0.);// レイの原点（カメラ位置）を中央に
     vec3 rd=normalize(vec3(uv,1.));// レイの方向
     
     // レイマーチング
@@ -152,7 +152,7 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
             
             // FBMを計算して変位量を取得
             vec3 origPosition=rotateY(iTime*.5)*rotateX(iTime*.7*.5)*p;
-            float boxDist=sdBox(origPosition,vec3(1.));
+            float boxDist=sdBox(origPosition,vec3(10.));// サイズを10倍に
             float displacement=fbm(origPosition*3.+iTime*.2)*.6;
             
             // ベースカラーをHSVに変換
