@@ -51,6 +51,24 @@ float fbm(vec3 p){
     return value;
 }
 
+// RGB -> HSV変換
+vec3 rgb2hsv(vec3 c){
+    vec4 K=vec4(0.,-1./3.,2./3.,-1.);
+    vec4 p=mix(vec4(c.bg,K.wz),vec4(c.gb,K.xy),step(c.b,c.g));
+    vec4 q=mix(vec4(p.xyw,c.r),vec4(c.r,p.yzx),step(p.x,c.r));
+    
+    float d=q.x-min(q.w,q.y);
+    float e=1.e-10;
+    return vec3(abs(q.z+(q.w-q.y)/(6.*d+e)),d/(q.x+e),q.x);
+}
+
+// HSV -> RGB変換
+vec3 hsv2rgb(vec3 c){
+    vec4 K=vec4(1.,2./3.,1./3.,3.);
+    vec3 p=abs(fract(c.xxx+K.xyz)*6.-K.www);
+    return c.z*mix(K.xxx,clamp(p-K.xxx,0.,1.),c.y);
+}
+
 // 距離関数：立方体
 float sdBox(vec3 p,vec3 b)
 {
@@ -132,11 +150,23 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
             vec3 lightDir=normalize(vec3(1.,1.,-1.));
             float diff=max(dot(normal,lightDir),0.);
             
-            // ノイズを色にも反映
-            float noiseFactor=fbm(p*2.+iTime*.1);
+            // FBMを計算して変位量を取得
+            vec3 origPosition=rotateY(iTime*.5)*rotateX(iTime*.7*.5)*p;
+            float boxDist=sdBox(origPosition,vec3(1.));
+            float displacement=fbm(origPosition*3.+iTime*.2)*.3;
+            
+            // ベースカラーをHSVに変換
             vec3 baseColor=vec3(.8,.3,.2);
-            vec3 noiseColor=vec3(.2,.5,.8);
-            vec3 col=mix(baseColor,noiseColor,noiseFactor)*diff+vec3(.1);
+            vec3 hsvColor=rgb2hsv(baseColor);
+            
+            // 変位に基づいてHueをシフト（-0.3 ~ +0.3のシフト）
+            hsvColor.x+=displacement*1.;
+            
+            // Saturationを1.8倍に
+            hsvColor.y=min(hsvColor.y*1.8,1.);
+            
+            // RGBに戻す
+            vec3 col=hsv2rgb(hsvColor)*diff+vec3(.1);
             
             fragColor=vec4(col,1.);
             return;
