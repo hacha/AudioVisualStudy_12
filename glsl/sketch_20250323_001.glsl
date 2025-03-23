@@ -108,7 +108,7 @@ float map(vec3 p)
     float box=sdBox(p,vec3(10.));
     
     // FBMによるディスプレースメント
-    float displacement=fbm(p*3.+time*.2)*.6;
+    float displacement=fbm(p*3.+iTime*.2)*.6;// time→iTimeに変更して元の速度に
     
     return-(box+displacement);// 反転して内側から見るように
 }
@@ -153,7 +153,7 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
             // FBMを計算して変位量を取得
             vec3 origPosition=rotateY(iTime*.1)*rotateX(iTime*.07)*p;// 0.5→0.1, 0.7*0.5→0.07に変更
             float boxDist=sdBox(origPosition,vec3(10.));// サイズを10倍に
-            float displacement=fbm(origPosition*3.+iTime*.04)*.6;// 0.2→0.04に変更
+            float displacement=fbm(origPosition*3.+iTime*.2)*.6;// 0.04→0.2に戻す
             
             // ベースカラーをHSVに変換
             vec3 baseColor=vec3(.8,.3,.2);
