@@ -8,6 +8,10 @@ alwaysApply: true
 
 - glsl/ .glslはここに保存します
 
+## Caution
+
+こちらが質問している場合は指示がない限り勝手にコードを書き始めないこと。
+
 ## CustomCommand
 
 「new sketch」とだけ発言されたら、template.glsl をコピーして sketch_(yyyymmdd)_(number).glsl というファイルを生成してください。
