@@ -1,0 +1,21 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+## File Structure
+
+- glsl/ .glslはここに保存します
+
+## CustomCommand
+
+「new sketch」とだけ発言されたら、template.glsl をコピーして sketch_(yyyymmdd)_(number).glsl というファイルを生成してください。
+
+## Git Integration
+
+.glslを編集した際にはgit commitすること。
+commit messageにはプロンプト履歴(指示全文と、その返答)を含めること。
+改行時は次のように-mフラグを使ってください。
+ex: git commit -m "1行目" -m "2行目"
+"\n"という文字列では改行できないので注意！
