@@ -124,11 +124,11 @@ float map(vec3 p)
     p=rotateY(time)*rotateX(time*.7)*p;
     
     // 有機的な丸い立方体SDF（内外反転）
-    // 半径1.0の丸み、振幅0.2、周波数0.3のサイン波変形
-    float box=sdOrganicBox(p,vec3(10.),1.,.2,.3);
+    // 丸みをより大きく、周波数を小さくしてなだらかに
+    float box=sdOrganicBox(p,vec3(10.),2.,.3,.15);
     
-    // FBMによるディスプレースメント
-    float displacement=fbm(p*1.5+iTime*.2)*.6;// time→iTimeに変更して元の速度に
+    // FBMによるディスプレースメント（周波数も小さく）
+    float displacement=fbm(p*.8+iTime*.2)*.6;
     
     return-(box+displacement);// 反転して内側から見るように
 }
@@ -171,10 +171,10 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
             float diff=max(dot(normal,lightDir),0.);
             
             // FBMを計算して変位量を取得
-            vec3 origPosition=rotateY(iTime*.1)*rotateX(iTime*.07)*p;// 0.5→0.1, 0.7*0.5→0.07に変更
+            vec3 origPosition=rotateY(iTime*.1)*rotateX(iTime*.07)*p;
             // 有機的な立方体のSDF計算（色の計算用）
-            float boxDist=sdOrganicBox(origPosition,vec3(10.),1.,.2,.3);
-            float displacement=fbm(origPosition*3.+iTime*.2)*.6;// 0.04→0.2に戻す
+            float boxDist=sdOrganicBox(origPosition,vec3(10.),2.,.3,.15);
+            float displacement=fbm(origPosition*.8+iTime*.2)*.6;
             
             // ベースカラーをHSVに変換
             vec3 baseColor=vec3(.8,.3,.2);
