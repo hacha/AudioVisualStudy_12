@@ -100,8 +100,8 @@ mat3 rotateX(float angle){
 // シーンのSDF
 float map(vec3 p)
 {
-    // 時間で回転
-    float time=iTime*.5;
+    // 時間で回転（速度を0.2倍に減速）
+    float time=iTime*.1;// 0.5→0.1に変更
     p=rotateY(time)*rotateX(time*.7)*p;
     
     // 基本の立方体SDF（サイズを10倍にして、内外を反転）
@@ -151,9 +151,9 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
             float diff=max(dot(normal,lightDir),0.);
             
             // FBMを計算して変位量を取得
-            vec3 origPosition=rotateY(iTime*.5)*rotateX(iTime*.7*.5)*p;
+            vec3 origPosition=rotateY(iTime*.1)*rotateX(iTime*.07)*p;// 0.5→0.1, 0.7*0.5→0.07に変更
             float boxDist=sdBox(origPosition,vec3(10.));// サイズを10倍に
-            float displacement=fbm(origPosition*3.+iTime*.2)*.6;
+            float displacement=fbm(origPosition*3.+iTime*.04)*.6;// 0.2→0.04に変更
             
             // ベースカラーをHSVに変換
             vec3 baseColor=vec3(.8,.3,.2);
