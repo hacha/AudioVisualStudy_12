@@ -116,6 +116,31 @@ mat3 rotateX(float angle){
     );
 }
 
+// 跳ね回るPointLightの位置を計算
+vec3 getPointLightPos(float time){
+    // 箱のサイズに合わせて、バウンドする範囲を設定
+    float boxSize=9.;// 実際の立方体サイズ10.0より少し小さめ
+    
+    // 初速度と重力
+    vec3 velocity=vec3(5.,7.,6.);
+    vec3 gravity=vec3(0.,-9.8,0.);
+    
+    // 時間の経過による位置変化（単純なバウンス物理を近似）
+    vec3 pos=vec3(0.);
+    
+    // X, Y, Z方向それぞれで独立してバウンス計算
+    // sin/cosベースの周期的な動きと、跳ねる効果を組み合わせる
+    pos.x=boxSize*sin(time*velocity.x*.1);
+    
+    // Y方向は重力を意識した上下運動
+    float bounceHeight=abs(sin(time*2.))*.8+.2;
+    pos.y=boxSize*bounceHeight*sin(time*velocity.y*.15);
+    
+    pos.z=boxSize*cos(time*velocity.z*.12);
+    
+    return pos;
+}
+
 // シーンのSDF
 float map(vec3 p)
 {
@@ -155,6 +180,10 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
     vec3 ro=vec3(0.,0.,0.);// レイの原点（カメラ位置）を中央に
     vec3 rd=normalize(vec3(uv,1.));// レイの方向
     
+    // PointLightの位置と色
+    vec3 pointLightPos=getPointLightPos(iTime);
+    vec3 pointLightColor=vec3(1.,.2,.1)*2.;// 明るい赤色
+    
     // レイマーチング
     float t=0.;
     float tmax=20.;
@@ -167,8 +196,21 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
         if(d<t_min){
             // オブジェクトにヒット
             vec3 normal=calcNormal(p);
+            
+            // 通常のディレクショナルライト
             vec3 lightDir=normalize(vec3(1.,1.,-1.));
             float diff=max(dot(normal,lightDir),0.);
+            
+            // PointLightからの照明計算
+            vec3 lightVec=pointLightPos-p;
+            float lightDistance=length(lightVec);
+            vec3 pointLightDir=normalize(lightVec);
+            
+            // 逆二乗則による減衰
+            float attenuation=1./(1.+.1*lightDistance+.01*lightDistance*lightDistance);
+            
+            // PointLightの拡散反射
+            float pointDiff=max(dot(normal,pointLightDir),0.);
             
             // FBMを計算して変位量を取得
             vec3 origPosition=rotateY(iTime*.1)*rotateX(iTime*.07)*p;
@@ -187,7 +229,15 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord)
             hsvColor.y=min(hsvColor.y*1.8,1.);
             
             // RGBに戻す
-            vec3 col=hsv2rgb(hsvColor)*diff+vec3(.1);
+            vec3 surfaceColor=hsv2rgb(hsvColor);
+            
+            // 最終的な色計算：通常ライトとポイントライトの組み合わせ
+            vec3 col=surfaceColor*diff*vec3(.6,.6,.8)+vec3(.1);// 通常ライト（青みがかった色）
+            col+=surfaceColor*pointDiff*pointLightColor*attenuation*4.;// 赤いポイントライト
+            
+            // ポイントライト自体も表示（小さな光の球として）
+            float lightGlow=smoothstep(.2,0.,length(p-pointLightPos)-.1);
+            col=mix(col,pointLightColor,lightGlow);
             
             fragColor=vec4(col,1.);
             return;
